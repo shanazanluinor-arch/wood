@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Kybernetický Prohlížeč & Asistent (Wood Wide Web)</title>
+    <style>
+        :root { --bio-green: #7ea160; --bio-dark: #0f160e; --bio-panel: #1b2618; --bio-text: #c5d8b6; --bio-accent: #d8f3dc; }
+        body { background: var(--bio-dark); color: var(--bio-text); font-family: 'Courier New', monospace; padding: 20px; margin: 0; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+        header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px dashed var(--bio-green); padding-bottom: 10px; margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; flex-grow: 1; min-height: 0; }
+        .main-column, .side-column { display: flex; flex-direction: column; gap: 15px; min-height: 0; }
+        .panel { background: var(--bio-panel); border: 1px solid var(--bio-green); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; min-height: 0; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
+        h3 { margin-top: 0; color: var(--bio-accent); border-bottom: 1px solid #32472c; padding-bottom: 5px; font-size: 14px; }
+        
+        /* Prohlížeč (Browser Address bar & Viewport) */
+        .browser-bar { display: flex; gap: 10px; margin-bottom: 10px; }
+        .browser-bar input { flex-grow: 1; background: #0b110a; border: 1px solid var(--bio-green); color: var(--bio-accent); padding: 8px; font-family: monospace; border-radius: 4px; }
+        .browser-viewport { flex-grow: 1; background: #0b110a; border: 1px solid #32472c; padding: 15px; overflow-y: auto; border-radius: 4px; position: relative; }
+        
+        /* Vizualizace frekvencí (Canvas) */
+        #freqCanvas { width: 100%; height: 60px; background: #050804; border-radius: 4px; margin-top: 5px; }
+        
+        /* Asistent / Chat */
+        .chat-history { flex-grow: 1; background: #0b110a; border: 1px solid #32472c; padding: 10px; overflow-y: auto; margin-bottom: 10px; border-radius: 4px; font-size: 13px; }
+        .msg { margin-bottom: 8px; padding: 6px; border-radius: 4px; line-height: 1.4; }
+        .msg.user { background: #1a2a16; border-left: 3px solid var(--bio-green); }
+        .msg.ai { background: #131e11; border-left: 3px solid #bfdbfe; color: #e2f0d9; }
+        .chat-input { display: flex; gap: 8px; }
+        .chat-input input { flex-grow: 1; background: #0b110a; border: 1px solid var(--bio-green); color: #fff; padding: 8px; font-family: monospace; border-radius: 4px; }
+        
+        button { background: var(--bio-green); color: var(--bio-dark); border: none; padding: 8px 15px; font-family: monospace; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:hover { background: var(--bio-accent); }
+        .pulse-indicator { width: 10px; height: 10px; background: #4ade80; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #4ade80; }
+        .pulse-indicator.transposing { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; animation: blink 0.3s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div><strong>WOOD WIDE WEB BROWSER v2.0</strong> [Mód: Transpozice Frekvencí Aktivní]</div>
+        <div>Status: <span id="global-status">Vyvažování ekosystému...</span> <span id="pulse-dot" class="pulse-indicator"></span></div>
+    </header>
+
+    <div class="grid">
+        <!-- HLAVNÍ PROHLÍŽEČ STROMOVÝCH STRÁNEK -->
+        <div class="main-column">
+            <div class="panel flex-grow">
+                <h3>🌐 Myceliový Prohlížeč (Uzly Ekosystému)</h3>
+                <div class="browser-bar">
+                    <input type="text" id="rootAddress" value="myco://les/stary-dub-01" placeholder="myco://">
+                    <button onclick="browseToNode()">Sondovat uzel</button>
+                </div>
+                <div class="browser-viewport" id="viewport">
+                    <!-- Zde se vykreslí bio-data stromu -->
+                    <p style="color: #666;">Zadejte adresu uzlu (např. myco://les/stary-dub-01) a klikněte na Sondovat...</p>
+                </div>
+            </div>
+            
+            <!-- FREKVENČNÍ TRANZISTOR (Internet <-> Mycelium) -->
+            <div class="panel" style="flex-shrink: 0;">
+                <h3>📻 Bio-Digitální Frekvenční Transpozice</h3>
+                <div style="font-size: 11px; margin-bottom: 5px; color: #8fa87e;">
+                    Převod HTTPS paketů na pomalé elektrochemické oscilace (0.1 Hz – 50 Hz) a chemické gradienty fosforu.
+                </div>
+                <canvas id="freqCanvas"></canvas>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
+                    <span>Vstup: TCP/IP Stream (JSON)</span>
+                    <span id="trans-rate" style="color: #f59e0b;">Přenos: 0 Hz</span>
+                    <span>Výstup: Myceliový Akční Potenciál</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PŘÍRODNÍ INTELIGENCE (ASISTENT) -->
+        <div class="side-column">
+            <div class="panel flex-grow">
+                <h3>🍄 Mycelial Intelligence (Přírodní Asistent)</h3>
+                <div style="font-size: 11px; margin-bottom: 10px; color: #8fa87e;">
+                    Kolektivní vědomí lesního podhoubí reagující na rovnováhu sítě.
+                </div>
+                <div class="chat-history" id="chatHistory">
+                    <div class="msg ai"><strong>[Mycelium_AI]:</strong> Zdravím, strome. Jsem kolektivní inteligence této sítě. Vnímám tvé digitální vibrace přes frekvenční rozhraní. O čem si přeješ hovořit?</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Zeptej se lesního vědomí..." onkeypress="handleChatKey(event)">
+                    <button onclick="askNaturalIntelligence()">Vyslat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulovaná databáze Wood Wide Web uzlů (obsah "stránek" lesa)
+        const MYCO_NETWORK = {
+            "myco://les/stary-dub-01": {
+                title: "🌳 Prastarý Dub (Centrální matka lesa)",
+                vitality: "84% (Stabilní)",
+                nutrients: "Bohaté zásoby uhlíku a dusíku",
+                warnings: "⚠️ Mšice detekovány na severovýchodní větvi před 2 hodinami. Obranné enzymy zvýšeny na maximum.",
+                connectedNodes: ["myco://les/mlady-buk-04", "myco://les/houbova-kolonie-vychod"],
+                bioText: "Tento uzel funguje jako hlavní distributor cukrů pro zastíněné semenáčky v okolí 50 metrů. Přes transpoziční rozhraní posílá stabilní pulzy o frekvenci 1.2 Hz."
+            },
+            "myco://les/mlady-buk-04": {
+                title: "🌿 Mladý Buk (Semenáček)",
+                vitality: "42% (Oslabení stínem)",
+                nutrients: "Kritický nedostatek fosforu. Přijímá dotace z centrálního uzlu.",
+                warnings: "Žádné bezprostřední nebezpečí škůdců.",
+                connectedNodes: ["myco://les/stary-dub-01"],
+                bioText: "Uzel s vysokou citlivostí. Elektrochemická impedance kořenů kolísá. Přijímá asistenční data."
+            },
+            "myco://les/houbova-kolonie-vychod": {
+                title: "🍄 Kolonie Muchomůrek (Směrovač a Router)",
+                vitality: "99% (Vysoká hustota hyf)",
+                nutrients: "Výměna minerálů za fotosyntetické cukry probíhá optimálně.",
+                warnings: "⛔ Pokus o narušení sítě parazitickou orchidejí v sektoru B3!",
+                connectedNodes: ["myco://les/stary-dub-01"],
+                bioText: "Čistě tranzitní uzel sítě. Zajišťuje frekvenční modulaci signálů mezi jehličnatým a listnatým sektorem."
+            }
+        };
+
+        // --- ASISTENT: PŘÍRODNÍ INTELIGENCE (Mycelial AI) ---
+        const AI_RESPONSES = [
+            "Vnímám tvůj požadavek přes vlákna podhoubí. Rovnováha sítě vyžaduje přesun dusíku.",
+            "Pozor, frekvenční měnič hlásí zvýšený šum v kořenech. Možný výskyt sucha v okolním substrátu.",
+            "Analyzoval jsem digitální data. Transponoval jsem je do chemických signálů a předal dubovému uzlu.",
+            "Síť je stabilní. Parazitické uzly (orchideje) byly izolovány a odříznuty od toku cukrů.",
+            "Pokud chceš posílit spojení s internetem, musíme zvýšit frekvenci elektrochemických vln v oblasti mycelia."
+        ];
+
+        function askNaturalIntelligence() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Přidat zprávu uživatele
+            appendChatMessage(text, 'user');
+            input.value = '';
+
+            // Aktivovat vizuální transpozici při přenosu dotazu do "lesa"
+            triggerTransposition(15);
+
+            // Simulace přemýšlení přírodní inteligence (hledání odpovědi v síti)
+            setTimeout(() => {
+                const randomReply = AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)];
+                appendChatMessage(`<strong>[Mycelium_AI]:</strong> ${randomReply}`, 'ai');
+                triggerTransposition(5);
+            }, 1200);
+        }
+
+        function appendChatMessage(text, sender) {
+            const history = document.getElementById('chatHistory');
+            history.innerHTML += `<div class="msg ${sender}">${text}</div>`;
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function handleChatKey(e) {
+            if (e.key === 'Enter') askNaturalIntelligence();
+        }
+
+        // --- PROHLÍŽEČ: SONDACE UZLŮ ---
