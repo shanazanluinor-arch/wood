@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stromovka Grid Control</title>
+    <style>
+        :root { --neon: #52b788; --dark: #070a07; --panel: #111a11; --text: #b7e4c7; --warn: #ffb703; }
+        body { background: var(--dark); color: var(--text); font-family: monospace; margin: 0; padding: 10px; font-size: 13px; }
+        header { border-bottom: 2px solid var(--neon); padding-bottom: 6px; margin-bottom: 12px; }
+        .grid { display: flex; flex-direction: column; gap: 10px; }
+        .panel { background: var(--panel); border: 1px solid var(--neon); border-radius: 6px; padding: 10px; }
+        h3 { margin: 0 0 6px 0; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Výběr stromů z mřížky */
+        .tree-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 10px; }
+        .tree-btn { background: #1b2e1a; border: 1px solid var(--neon); color: var(--text); padding: 8px; font-family: monospace; cursor: pointer; border-radius: 4px; text-align: left; font-size: 11px; }
+        .tree-btn.active { background: var(--neon); color: #000; font-weight: bold; }
+        
+        /* Vizuální mikroskopická sonda */
+        .micro-sonda { background: #000; border: 1px solid #1a3322; height: 120px; border-radius: 4px; position: relative; overflow: hidden; margin-top: 5px; display: flex; align-items: center; justify-content: center; }
+        .mycelium-fiber { position: absolute; background: var(--neon); opacity: 0.3; height: 1px; transform-origin: left center; }
+        .node-dot { position: absolute; width: 6px; height: 6px; background: #fff; border-radius: 50%; box-shadow: 0 0 8px #fff; }
+        
+        /* Chat a statistiky */
+        .bio-stats { font-size: 11px; line-height: 1.5; background: #000; padding: 8px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid var(--neon); }
+        .terminal-chat { height: 110px; background: #040705; border: 1px solid #1a3322; padding: 8px; overflow-y: auto; margin-bottom: 8px; border-radius: 4px; font-size: 12px; }
+        .msg { margin-bottom: 5px; padding: 4px; border-radius: 3px; }
+        .msg.tree { background: #0b1c12; border-left: 3px solid #70e000; color: #e2f0d9; }
+        .msg.user { background: #132a13; border-left: 3px solid var(--neon); }
+        
+        .input-row { display: flex; gap: 6px; }
+        .input-row input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: #fff; padding: 8px; font-family: monospace; border-radius: 4px; }
+        button.action { background: var(--neon); color: #000; border: none; padding: 8px 12px; font-family: monospace; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        .control-row { display: flex; gap: 6px; margin-top: 6px; }
+        .ctrl-btn { flex: 1; font-size: 11px; background: var(--warn); color: #000; padding: 6px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <strong>STROMOVKA ČB: CENTRAL GRID CONTROL</strong><br>
+        Status: Sonda kořenových systémů stabilní.
+    </header>
+
+    <div class="grid">
+        <!-- SELEKTOR INDIVIDUÁLNÍCH STROMŮ -->
+        <div class="panel">
+            <h3>🎛️ Zvolit strom pod kontrolu</h3>
+            <div class="tree-selector">
+                <button class="tree-btn active" id="btn-topol" onclick="selectTree('topol')">🌳 Topol S. (ID: 01)</button>
+                <button class="tree-btn" id="btn-dub" onclick="selectTree('dub')">🌳 Dub Letní (ID: 02)</button>
+                <button class="tree-btn" id="btn-vrba" onclick="selectTree('vrba')">🌳 Vrba Mokřad (ID: 03)</button>
+                <button class="tree-btn" id="btn-lipa" onclick="selectTree('lipa')">🌳 Lípa JČU (ID: 04)</button>
+            </div>
+        </div>
+
+        <!-- MONITOR STAVU A SÍTĚ -->
+        <div class="panel">
+            <h3>👁️ Vizuální Mikroskopická Sonda Pletiva</h3>
+            <div class="micro-sonda" id="sondaView">
+                <!-- Zde skript vygeneruje grafiku sítě hub a uzlů -->
+            </div>
+            <div class="bio-stats" id="bioStats">
+                Načítám telemetrii kořenů...
+            </div>
+            <div class="control-row">
+                <button class="ctrl-btn" onclick="modifyTree('vitality', 5)">⚡ Vstříknout glukózu (+5%)</button>
+                <button class="ctrl-btn" style="background:#4cc9f0;" onclick="modifyTree('water', 10)">💧 Dotovat vodou (+10%)</button>
+            </div>
+        </div>
+
+        <!-- PŘÍMÁ KOMUNIKACE SE STROMEM -->
+        <div class="panel">
+            <h3>💬 Nativní kanál se stromem</h3>
+            <div class="terminal-chat" id="chatBox"></div>
+            <div class="input-row">
+                <input type="text" id="chatInput" placeholder="Vyslat frekvenční dotaz do pletiva..." onkeypress="if(event.key==='Enter') sendToTree()">
+                <button class="action" onclick="sendToTree()">Vyslat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Databáze každého stromu zvlášť (Obsahuje bio-statistiky i unikátní vzorce chování pro komunikaci)
+        var TREES_DATA = {
+            topol: {
+                id: "01", name: "Topol kanadský (Dlouhá louka)", vitality: 45, water: 30, phosphate: 12,
+                responses: [
+                    "Moje staré kmeny dřevnatí. Cítím slabý tok cukrů. Děkuji za energetickou dotaci.",
+                    "Kořeny v sektoru A vykazují sucho. Pošli více vláhy skrze pletivo.",
+                    "Signál zachycen. Mycelium lišky kolem mě slábne, potřebuji stabilitu."
+                ]
+            },
+            dub: {
+                id: "02", name: "Dub letní (Centrální okruh)", vitality: 88, water: 75, phosphate: 65,
+                responses: [
+                    "Mám dostatek slunečního svitu. Přebytečný uhlík posílám starému topolu.",
+                    "Moje hluboké kořeny narazily na spodní vodu. Jsem v plné síle.",
+                    "Vnímám tvůj digitální impuls. Moje obranné enzymy proti škůdcům jsou aktivní."
+                ]
+            },
+            vrba: {
+                id: "03", name: "Vrba křehká (Slepé rameno)", vitality: 70, water: 95, phosphate: 40,
+                responses: [
+                    "Vlhkost je optimální, kořeny jsou ponořené v mokřadu u řeky.",
+                    "Filtruji městské dusičnany. Čistím biosféru parku.",
+                    "Puls sítě je klidný. Přenáším bio-vlny směrem k univerzitnímu kampusu."
+                ]
+            },
+            lipa: {
+                id: "04", name: "Lípa Olgy Havlové (Kampus JČU)", vitality: 95, water: 60, phosphate: 80,
+                responses: [
+                    "Vnímám vědeckou aktivitu v kampusu. Moje listy ukládají maximum uhlíku.",
+                    "Spojení s vnitřním parkem je čisté. Vysílám asistenční frekvenci 3.1 Hz.",
+                    "Kolektivní podhoubí kolem mých kořenů prosperuje. Síť je stabilní."
+                ]
+            }
+        };
+
+        var activeTree = 'topol';
+
+        // Výběr stromu z mřížky a překreslení celé stránky
+        function selectTree(treeKey) {
+            activeTree = treeKey;
+            
+            // Správa aktivních tlačítek
+            var keys = ['topol', 'dub', 'vrba', 'lipa'];
+            for(var i=0; i<keys.length; i++) {
+                document.getElementById('btn-' + keys[i]).className = 'tree-btn' + (keys[i] === treeKey ? ' active' : '');
+            }
+            
+            updateVisuals();
+            
+            // Uvítací zpráva od konkrétního stromu do chatu
+            var chat = document.getElementById('chatBox');
+            chat.innerHTML = "<div class='msg tree'><strong>[" + TREES_DATA[treeKey].name.split(" ")[0] + "]:</strong> Spojení navázáno. Moje vitalita je " + TREES_DATA[treeKey].vitality + "%. Poslouchám tvé impulsy.</div>";
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Interaktivní modifikace parametrů stromu (Ovládání)
+        function modifyTree(param, val) {
+            var t = TREES_DATA[activeTree];
+            t[param] += val;
+            if(t[param] > 100) t[param] = 100;
+            
+            updateVisuals();
+            
+            var chat = document.getElementById('chatBox');
+            var actionName = param === 'vitality' ? "Injektována glukóza" : "Spuštěna závlaha";
+            chat.innerHTML += "<div class='msg user'><strong>[Příkaz]:</strong> " + actionName + " -> " + t.name.split(" ")[0] + " (" + t[param] + "%).</div>";
+            
+            // Okamžitá reakce stromu na vaši akci
+            setTimeout(function() {
+                chat.innerHTML += "<div class='msg tree'><strong>[" + t.name.split(" ")[0] + "]:</strong> Absorbováno. Moje senzory zaznamenaly změnu chemického gradientu!</div>";
+                chat.scrollTop = chat.scrollHeight;
+            }, 400);
+        }
+
+        // Komunikace (Chat) se specifickým stromem
+        function sendToTree() {
+            var input = document.getElementById('chatInput');
+            var msg = input.value.trim();
+            if(!msg) return;
+            
+            var t = TREES_DATA[activeTree];
+            var chat = document.getElementById('chatBox');
+            
+            chat.innerHTML += "<div class='msg user'><strong>Vy:</strong> " + msg + "</div>";
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+            
+            // Výběr unikátní odpovědi na základě vědomí vybraného stromu
+            setTimeout(function() {
+                var replies = t.responses;
+                var randomReply = replies[Math.floor(Math.random() * replies.length)];
+                chat.innerHTML += "<div class='msg tree'><strong>[" + t.name.split(" ")[0] + "]:</strong> " + randomReply + "</div>";
+                chat.scrollTop = chat.scrollHeight;
