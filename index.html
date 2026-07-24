@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nativní Wood Wide Web Prohlížeč</title>
+    <style>
+        :root { 
+            --myco-dark: #0a0f0d;
+            --myco-moss: #1b2e1a;
+            --myco-neon: #52b788;
+            --myco-spore: #b7e4c7;
+            --myco-warn: #ffb703;
+        }
+        body { 
+            background: var(--myco-dark); 
+            color: var(--myco-spore); 
+            font-family: monospace; 
+            margin: 0; 
+            padding: 12px;
+            display: flex; 
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        header { 
+            border-bottom: 2px dotted var(--myco-neon); 
+            padding-bottom: 8px; 
+            margin-bottom: 12px;
+            font-size: 11px;
+        }
+        .container { display: flex; flex-direction: column; gap: 12px; }
+        .panel { 
+            background: var(--myco-moss); 
+            border: 1px solid var(--myco-neon); 
+            border-radius: 6px; 
+            padding: 12px; 
+        }
+        h3 { margin: 0 0 8px 0; color: #fff; font-size: 13px; text-transform: uppercase; }
+        
+        .myco-address-bar { display: flex; gap: 6px; margin-bottom: 8px; }
+        .myco-address-bar input { flex-grow: 1; background: #000; border: 1px solid var(--myco-neon); color: var(--myco-neon); padding: 8px; font-family: monospace; border-radius: 4px; font-weight: bold; }
+        .myco-viewport { background: #040705; border: 1px solid #1a3322; padding: 12px; height: 160px; overflow-y: auto; border-radius: 4px; font-size: 12px; line-height: 1.4; }
+        
+        #transpositionCanvas { width: 100%; height: 50px; background: #020503; border-radius: 4px; display: block; }
+        .freq-info { display: flex; justify-content: space-between; font-size: 10px; margin-top: 4px; color: #74c69d; }
+
+        .myco-chat { height: 130px; background: #040705; border: 1px solid #1a3322; padding: 8px; overflow-y: auto; margin-bottom: 8px; border-radius: 4px; font-size: 12px; }
+        .node-link { color: var(--myco-neon); cursor: pointer; text-decoration: underline; }
+        
+        .msg { margin-bottom: 6px; padding: 4px 6px; border-radius: 3px; }
+        .msg.user { background: #132a13; border-left: 3px solid var(--myco-neon); }
+        .msg.ai { background: #081c15; border-left: 3px solid #70e000; }
+        .msg.peer { background: #2d1e18; border-left: 3px solid var(--myco-warn); }
+        
+        .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
+        .input-row input { flex-grow: 1; background: #000; border: 1px solid var(--myco-neon); color: #fff; padding: 8px; font-family: monospace; border-radius: 4px; }
+        
+        button { background: var(--myco-neon); color: #000; border: none; padding: 8px 12px; font-family: monospace; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #fff; }
+        .status { display: flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 4px; }
+        .indicator { width: 8px; height: 8px; background: #52b788; border-radius: 50%; }
+        .indicator.pulse { animation: activePulse 0.3s infinite alternate; background: var(--myco-warn); }
+        @keyframes activePulse { from { opacity: 0.3; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <strong>NATIVNÍ ECO-PROHLÍŽEČ WOOD WIDE WEB (Opravená verze)</strong>
+        <div class="status">
+            <div id="status-led" class="indicator"></div>
+            <span id="status-text">Mycelium aktivní. Vyvažování biosféry...</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 1. WOOD WIDE WEB PROHLÍŽEČ -->
+        <div class="panel">
+            <h3>🌐 Protokol myco:// (Prohlížeč Uzlů Lesa)</h3>
+            <div class="myco-address-bar">
+                <input type="text" id="mycoUrl" value="myco://smrk-matka-01">
+                <button onclick="probeMycoNode()">Sondovat</button>
+            </div>
+            <div class="myco-viewport" id="mycoBrowserView">
+                <p style="color: #4f772d;">[Systém připraven] Zadejte kořenovou adresu do řádku nahoře a stiskněte "Sondovat". Prohlížíte biologickou síť.</p>
+            </div>
+        </div>
+
+        <!-- 2. FREKVENČNÍ TRANZISTOR -->
+        <div class="panel">
+            <h3>📻 Měnič Rozhraní (Transpozice Internet -> Mycelium)</h3>
+            <canvas id="transpositionCanvas"></canvas>
+            <div class="freq-info">
+                <span>Vstup: Digitální data</span>
+                <span id="current-hz">1.0 Hz</span>
+                <span>Výstup: Elektrochemické Impulsy</span>
+            </div>
+        </div>
+
+        <!-- 3. ASISTENT (MYCELIAL AI) & PEER SPOJENÍ -->
+        <div class="panel">
+            <h3>🍄 Mycelial Intelligence & Hledání druhé strany</h3>
+            
+            <!-- Manuální kořenový most pro případ, že selže internet -->
+            <div class="input-row" style="background: #09140a; padding: 6px; border-radius: 4px; border: 1px dashed #344e2b;">
+                <button onclick="generateRootCode()" style="font-size:10px; background:#a3b899;">1. Vygenerovat kořen</button>
+                <input type="text" id="rootBridgeCode" placeholder="Zde se objeví / sem vlož kód druhé strany..." style="font-size:10px;">
+                <button onclick="connectRootBridge()" style="font-size:10px; background:var(--myco-warn);">2. Spojit kořeny</button>
+            </div>
+
+            <div class="myco-chat" id="mycoChatHistory">
+                <div class="msg ai"><strong>[Mycelium_AI]:</strong> Jsem kolektivní inteligence lesa. Kód byl opraven, aby fungoval lokálně i bez HTTPS protokolů. Můžeš ihned kliknout na tlačítko "Sondovat" nahoře, nebo mi napsat zprávu. Graf frekvencí okamžitě zareaguje.</div>
+            </div>
+            <div class="input-row">
+                <input type="text" id="mycoChatInput" placeholder="Vyslat frekvenční zprávu..." onkeypress="if(event.key==='Enter') transmitMessage()">
+                <button onclick="transmitMessage()">Vyslat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA PRO WOOD WIDE WEB PROHLÍŽEČ ---
+        const WOOD_WIDE_WEB_PAGES = {
+            "myco://smrk-matka-01": {
+                name: "🌲 Smrk ztepilý (Mateřský uzel - Sektor Sever)",
+                vitality: "94% [Optimální stav]",
+                flow: "Uhlohydráty odesílány do: myco://semenacek-smrku-05",
+                status: "Stabilní elektrochemický puls 2.4 Hz.",
+                content: "Tento dominantní uzel distribuuje přebytečný uhlík skrze houbová pletiva. V okolí nebyl zaznamenán žádný škůdce.",
+                links: ["myco://semenacek-smrku-05", "myco://podhoubi-hribu-03"]
+            },
+            "myco://semenacek-smrku-05": {
+                name: "🌱 Semenáček smrku (Zastíněný uzel)",
+                vitality: "39% [Světelný deficit]",
+                flow: "Přijímá 45mg dusíku/hod z myco://smrk-matka-01",
+                status: "Oslabený puls 0.4 Hz. Impedance kořenů vysoká.",
+                content: "Mladý stromek ve stínu. Bez dotací z hlavního mycelia by uzel nepřežil. Měnič teď posiluje jeho stabilitu.",
+                links: ["myco://smrk-matka-01"]
+            },
+            "myco://podhoubi-hribu-03": {
+                name: "🍄 Mycelium Hřibu Smrkového (P2P Směrovač)",
+                vitality: "99% [Vysoká hustota hyf]",
+                flow: "Výměna: Minerály za cukry s myco://smrk-matka-01",
+                status: "Vysokofrekvenční biologická aktivita (14 Hz).",
+                content: "Hlavní podzemní router a filtr v tomto sektoru. Zprostředkovává komunikaci a distribuci vody.",
+                links: ["myco://smrk-matka-01"]
+            }
+        };
+
+        // --- ASISTENT & LOKÁLNÍ SÍŤ ---
+        let peerConnected = false;
+
+        function probeMycoNode() {
+            const url = document.getElementById('mycoUrl').value.trim();
+            const view = document.getElementById('mycoBrowserView');
+            triggerTransposition(35); 
+
+            setTimeout(() => {
+                if (WOOD_WIDE_WEB_PAGES[url]) {
+                    const page = WOOD_WIDE_WEB_PAGES[url];
+                    let linkHtml = "";
+                    page.links.forEach(l => {
+                        linkHtml += `↳ <span class="node-link" onclick="goToMycoUrl('${l}')">${l}</span><br>`;
+                    });
+
+                    view.innerHTML = `
+                        <h4 style="color:#fff; margin:0 0 6px 0;">${page.name}</h4>
+                        <div><strong>Vitalita uzlu:</strong> ${page.vitality}</div>
+                        <div><strong>Tok živin:</strong> ${page.flow}</div>
+                        <div><strong>Stav pulsu:</strong> ${page.status}</div>
+                        <p style="margin:8px 0; color:#95d5b2; font-style:italic;">${page.content}</p>
+                        <div><strong>Detekované kořenové cesty:</strong><br>${linkHtml}</div>
+                    `;
+                    document.getElementById('status-text').innerText = `Prohlížeč napojen na: ${url}`;
+                } else {
+                    view.innerHTML = `<span style="color:var(--myco-warn);">⚠️ BIO-CHYBA 404<br>Kořenové vlákno na adrese "${url}" neodpovídá. Vzorek půdy je v tomto místě suchý.</span>`;
+                }
+            }, 300);
+        }
+
+        function goToMycoUrl(targetUrl) {
+            document.getElementById('mycoUrl').value = targetUrl;
+            probeMycoNode();
+        }
+
+        function transmitMessage() {
+            const input = document.getElementById('mycoChatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            appendChat(`<strong>Vy:</strong> ${msg}`, 'user');
+            input.value = '';
+            triggerTransposition(28);
+
+            if (peerConnected) {
